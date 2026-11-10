@@ -1,5 +1,62 @@
 # DynamicShaderFrameGen
 
+## About this fork
+
+This is a fork of [jatelop8/DynamicShaderFrameGen](https://github.com/jatelop8/DynamicShaderFrameGen) (upstream v1.52).
+It adds **one optional setting, `PreFgDLAA`**. Everything else is the upstream plugin, unchanged.
+
+### What it adds
+
+With DLSS-G frame generation (`Provider=1`) the upstream plugin never runs a DLSS super resolution pass. Tools that
+attach to the game's DLSS call therefore have nothing to attach to. The usual symptom: a DLSS 5 neural rendering
+ReShade add-on set to **After Upscaling** loads, but never processes a frame.
+
+`PreFgDLAA=1` makes the plugin run DLSS in DLAA mode on the finished frame, right before DLSS-G:
+
+```
+game + ENB  ->  DLAA (new)  ->  DLSS-hooking add-on runs here  ->  DLSS-G 2x-6x  ->  display
+```
+
+So you can have **DLSS-G multi frame generation and a DLSS 5 add-on in After Upscaling at the same time**, with the
+add-on working once per real frame on a real DLSS call that carries the engine's depth and motion vectors.
+
+### Who it is for
+
+You run this plugin with `Provider=1`, you use a ReShade add-on that hooks DLSS, and that add-on either does not
+engage or only works at its Present hook point. If you do not use such an add-on, you do not need this fork.
+
+### How to use it
+
+1. Build the plugin from this branch (see *Building from source* below) and install it like the upstream plugin.
+2. In `SKSE/Plugins/DynamicShaderFrameGen.ini` set:
+   ```ini
+   Provider=1
+   PreFgDLAA=1
+   NeuralRenderingEnabled=0
+   ```
+   Keep the plugin's built-in neural rendering off when an add-on does that job, or the frame is processed twice.
+3. Set your add-on to its After Upscaling hook point.
+4. Check `DynamicShaderFrameGen.log` for `[DLAA] evaluate ok`.
+
+The setting defaults to `0`. There is no prebuilt binary in this repository yet.
+
+### Status
+
+Experimental, tested on one machine: Skyrim SE 1.5.97, SKSE64 2.0.20, ENB 0.505, ReShade 6.8, RTX 4090, 2560x1440,
+DLSS-G at 4x. Design notes, the exact test results and the known limits are in [PREFG_DLAA.md](PREFG_DLAA.md).
+
+### Credits
+
+DynamicShaderFrameGen is the work of its author, [jatelop8](https://github.com/jatelop8), and of the projects credited
+further down. This fork is maintained by [@AlexandreL04](https://github.com/AlexandreL04) and was developed with
+[Claude Code](https://claude.com/claude-code). Same licence as upstream. No NVIDIA runtime, ENB, ReShade, add-on or
+MFG unlocker is distributed here.
+
+---
+
+*The original README follows.*
+
+
 An open-source SKSE plugin that adds **FSR 3.1 Frame Generation**,
 **NVIDIA DLSS Upscaling / DLAA** and **DLSS 5 Neural Rendering** to Skyrim
 Special Edition (**Anniversary Edition 1.6.1170** and **SE 1.5.97**), designed to
